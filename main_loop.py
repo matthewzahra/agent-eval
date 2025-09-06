@@ -15,7 +15,7 @@ def evaluate_prompt(prompt):
         yield res
         res_eval = eval_agent.prompt(prompt=res)
         print(res_eval)
-        yield res
+        yield res_eval
 
 
 
