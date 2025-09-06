@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import os 
 import google.genai as genai
 from google.genai import types
-from config import SYSTEM_PRIMER, MODEL, CHECK_STR
+from config import SYSTEM_PRIMER, CHECK_STR, MODEL_EVAL, MODEL_ACTION
 from helper_functions import print_model_text
 from dotenv import load_dotenv
 from actions import Action
@@ -53,7 +53,7 @@ class EvalAgent(Agent):
             types.Content(role="user", parts=[types.Part.from_text(text=self.current_state)]),
             types.Content(role="user", parts=[types.Part.from_text(text=self.check_str.format(goal=self.goal, repo=self.current_state, action=prompt))]),
         ]
-        response = self.client.models.generate_content(model=MODEL, contents=contents, config=config)
+        response = self.client.models.generate_content(model=MODEL_EVAL, contents=contents, config=config)
         return print_model_text(response)
     
     def make_evaluation_response(self):
@@ -157,13 +157,14 @@ class ActionAgent(Agent):
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(payload)
                 return {"ok": True, "action": action, "target": target}
-            
+
             elif action==action.DELETE_FILE:
                 if os.path.exists(path):
                     os.remove(path)
                     return {"ok": True, "action": action, "target": target}
                 else:
                     return {"ok": False, "error": "File does not exist"}
+                
             elif action==action.COMPLETED:
                 return {"ok": True, "action": action, "target": target}
 
@@ -246,7 +247,7 @@ class ActionAgent(Agent):
         ]
 
         # First turn
-        response = self.client.models.generate_content(model=MODEL, contents=contents, config=config)
+        response = self.client.models.generate_content(model=MODEL_ACTION, contents=contents, config=config)
         res = print_model_text(response)
 
         # If still requesting tools after our cap, stop cleanly.

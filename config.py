@@ -22,4 +22,5 @@ Rules:
 - Prefer small, auditable steps. Never propose destructive commands.
 """
 
-MODEL = "gemini-2.5-flash"
+MODEL_ACTION = "gemini-2.5-flash-lite"
+MODEL_EVAL = "gemini-2.5-flash"
