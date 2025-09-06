@@ -1,21 +1,22 @@
 from models import ActionAgent, EvalAgent
 from config import CHECK_STR
 
-def main():
-    prompt = input(">>> ")
-
+def evaluate_prompt(prompt):
     action_agent = ActionAgent()
     state = action_agent.summarize_repo()
-    eval_agent = EvalAgent(goal=prompt,check_str=CHECK_STR)
+    eval_agent = EvalAgent(goal=prompt)
     eval_agent.current_state = state
     counter = 0
 
     while counter < 5:
         counter += 1
-        res = action_agent.prompt(prompt=prompt)
+        res = action_agent.prompt(user_prompt=prompt)
         print(res)
+        yield res
         res_eval = eval_agent.prompt(prompt=res)
         print(res_eval)
+        yield res
+
 
 
     '''
