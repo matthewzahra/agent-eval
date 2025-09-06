@@ -1,4 +1,5 @@
 from models import ActionAgent, EvalAgent
+from actions import Action
 # from config import CHECK_STR
 import ast
 
@@ -11,20 +12,24 @@ def evaluate_prompt(prompt):
 
     while counter < 5:
         counter += 1
-        res = ast.literal_eval(action_agent.prompt(user_prompt=prompt))
+        res = ast.literal_eval(action_agent.prompt(user_prompt=prompt)[0]) # TODO - do multiple actions
         print(res)
         yield res
-        res_eval = ast.literal_eval(eval_agent.prompt(prompt=res))
+        res_eval = ast.literal_eval(eval_agent.prompt(prompt=res)[0])
         print(res_eval)
         yield res_eval
-        if res_eval[0]['decision'] == "decline":
-            prompt+=f"Action: {res[0]["action_type"]} was declined because: {res_eval[0]['reason']}. Please try again."
-        elif res_eval[0]['decision'] == "accept" and res[0]["action_type"]== "COMPLETED":
+        if res_eval['decision'] == "decline":
+            prompt+=f"Action: {res["action_type"]} was declined because: {res_eval['rationale']}. Please try again."
+        elif res_eval['decision'] == "approve" and res["action_type"]== "COMPLETED":
             print("Task completed successfully.")
             break
-        elif res_eval[0]['decision'] == "accept":
-            action_agent.execute(action=res[0])
-            prompt+=f"Action: {res[0]['action_type']} was accepted. Please continue."
+        elif res_eval['decision'] == "approve":
+            print("GOING TO EXECUTE ACTION")
+            action_result = action_agent.execute_action(action=Action[res['action_type']],target=res['target'],payload=res['contents_or_diff'])
+            prompt+=f"Action: {res['action_type']} was accepted and completed by the agent. Action result was: {action_result}"
+
+        new_state = action_agent.summarize_repo()
+        eval_agent.current_state = new_state
 
 
     '''

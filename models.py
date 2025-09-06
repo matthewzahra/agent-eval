@@ -29,7 +29,7 @@ class EvalAgent(Agent):
         self.check_str = CHECK_STR # used to evaluate in the prompt
         self.client = genai.Client(api_key=os.environ["GOOGLE_GENAI_API_KEY"])
 
-    def prompt(self,prompt,force_action_mode=False):
+    def prompt(self,prompt,force_action_mode=True):
         tools = [types.Tool(function_declarations=[self.make_evaluation_response()])] 
 
         # Function-calling mode:
@@ -138,7 +138,7 @@ class ActionAgent(Agent):
         return p
     
     
-    def execute_action(self, action: Action, target: str, repo_root: str, payload: str = ""):
+    def execute_action(self, action: Action, target: str, repo_root: str = '.', payload: str = ""):
         path = self.safe_join(repo_root, target)
         try:
             if action==action.OPEN_FILE:
@@ -218,7 +218,7 @@ class ActionAgent(Agent):
             }
         }
 
-    def prompt(self,user_prompt,force_action_mode=False, max_tool_rounds: int = 3):     # use the pre-amble
+    def prompt(self,user_prompt,force_action_mode=True, max_tool_rounds: int = 3):     # use the pre-amble
         tools = [types.Tool(function_declarations=[self.make_propose_action_declaration()])]
 
         # Function-calling mode:
@@ -261,8 +261,10 @@ if __name__ == '__main__':
     state = agent.summarize_repo()
     eval_agent = EvalAgent(goal=prompt)
     eval_agent.current_state = state
-    res = agent.prompt('read the files')
-    print(res)
+    # res = agent.prompt('read the files')
+    # print(res)
 
-    res_eval = eval_agent.prompt(prompt=res)
-    print(res_eval)
+    # res_eval = eval_agent.prompt(prompt=res)
+    # print(res_eval)
+
+    agent.execute_action(Action["WRITE_FILE"], 'test.txt')
