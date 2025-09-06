@@ -8,10 +8,8 @@ def evaluate_prompt(prompt):
     state = action_agent.summarize_repo()
     eval_agent = EvalAgent(goal=prompt)
     eval_agent.current_state = state
-    counter = 0
 
-    while counter < 5:
-        counter += 1
+    while True:
         res = ast.literal_eval(action_agent.prompt(user_prompt=prompt)[0]) # TODO - do multiple actions
         print(res)
         yield res

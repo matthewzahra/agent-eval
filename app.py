@@ -16,6 +16,15 @@ from main_loop import evaluate_prompt
 
 st.title("LLM Babysitter")
 
+from PIL import Image
+
+# Open the image file
+image = Image.open("image.png")  # replace with your file path
+image = image.resize((300, 300))  # width=300px, height=200px
+
+# Display the image
+st.image(image, caption="LLM Babysitter", use_container_width=False)
+
 prompt = st.text_area("Enter your prompt:")
 
 if st.button("Start Streaming"):
