@@ -235,7 +235,7 @@ def execute_action(action, repo_root):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
-    
+
 def print_model_text(response: types.GenerateContentResponse) -> None:
     """
     Print the model's natural language output, if any.

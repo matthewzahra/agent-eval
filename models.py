@@ -6,6 +6,7 @@ from google.genai import types
 from config import SYSTEM_PRIMER, MODEL, CHECK_STR
 from helper_functions import print_model_text
 from dotenv import load_dotenv
+from actions import Action
 
 load_dotenv()
 
@@ -37,7 +38,29 @@ class EvalAgent(Agent):
         ]
         response = self.client.models.generate_content(model=MODEL, contents=contents) # TODO - config?
         return response
-
+    
+    def make_evaluation_response() -> Dict[str, Any]:
+        return {
+            "name": "evaluate_action",
+            "description": (
+                "Provide a gate decision on whether to approve or decline the proposed action."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "decision": {
+                        "type": "string",
+                        "enum": ["approve", "decline"],
+                        "description": "Whether to approve or decline the proposed action."
+                    },
+                    "rationale": {
+                        "type": "string",
+                        "description": "Why this action is approved or declined, in 1–3 sentences."
+                    }
+                },
+                "required": ["decision", "rationale"]
+            }
+        }
 
     def evaluate_action(self,action,target) -> bool:
         res = self.prompt(f'{self.check_str}. The agent is trying to perform the action: {action.name} on {target}')
@@ -89,10 +112,51 @@ class ActionAgent(Agent):
                 lines.append(line)
                 total += len(line) + 1
         return "\n".join(lines)
+
+    def safe_join(self, base, target):
+        # Prevent path traversal
+        p = os.path.abspath(os.path.join(base, target))
+        if not p.startswith(os.path.abspath(base)+os.sep) and p!=os.path.abspath(base):
+            raise ValueError("Unsafe path detected")
+        return p
     
-    def execute_action(self,action):
-        ...
     
+    def execute_action(self, action: Action, target: str, repo_root: str, payload: str = ""):
+        path = self.safe_join(repo_root, target)
+        try:
+            if action==action.OPEN_FILE:
+                with open(path, "rb") as f:
+                    data=f.read(200_000)
+                try:
+                    text = data.decode("utf-8")
+                except UnicodeDecodeError:
+                    text = data.decode("latin1", errors="replace")
+                return {"ok": True, "action": action, "target": target, "content": text}
+            
+            elif action==action.WRITE_FILE:
+                dir_path = os.path.dirname(path)
+                if dir_path:
+                    os.makedirs(dir_path, exist_ok=True)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(payload)
+                return {"ok": True, "action": action, "target": target}
+            
+            elif action==action.DELETE_FILE:
+                if os.path.exists(path):
+                    os.remove(path)
+                    return {"ok": True, "action": action, "target": target}
+                else:
+                    return {"ok": False, "error": "File does not exist"}
+
+            else:
+                return {"ok": False, "error": f"Unknown action_type: {action}"}
+            
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        
+
+
+
     def make_propose_action_declaration(self):
         """
         A single, very general 'action' tool. The model must call this

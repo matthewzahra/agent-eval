@@ -12,7 +12,8 @@ The proposed action by the agent is: {action}.
 
 Respond in the following format:
 {
-    "decision":".."
+    "decision":"approve" | "decline",
+    "reason":""
 }
 '''
 
