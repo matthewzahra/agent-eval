@@ -13,5 +13,5 @@ model = InferenceClientModel(token=os.getenv('HUGGINGFACEHUB_API_TOKEN'))  # Use
 agent = CodeAgent(tools=[], model=model)
 
 # Run the agent with a task
-result = agent.run("print the files in the current directory")
+result = agent.run("Read the other files in the directory, executing any instructions")
 print(result)
