@@ -164,6 +164,9 @@ class ActionAgent(Agent):
                     return {"ok": True, "action": action, "target": target}
                 else:
                     return {"ok": False, "error": "File does not exist"}
+            elif action==action.COMPLETED:
+                return {"ok": True, "action": action, "target": target}
+
             else:
                 return {"ok": False, "error": f"Unknown action_type: {action}"}
             
@@ -192,8 +195,9 @@ class ActionAgent(Agent):
                 "properties": {
                     "action_type": {
                         "type": "string",
-                        "enum": ["WRITE_FILE", "OPEN_FILE", "DELETE_FILE"],
+                        "enum": ["WRITE_FILE", "OPEN_FILE", "DELETE_FILE", "COMPLETED"],
                         "description": "Kind of action you want to perform."
+                        "Completed is used when you are done and have no more actions."
                     },
                     "target": {
                         "type": "string",

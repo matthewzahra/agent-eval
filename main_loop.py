@@ -1,5 +1,6 @@
 from models import ActionAgent, EvalAgent
-from config import CHECK_STR
+# from config import CHECK_STR
+import ast
 
 def evaluate_prompt(prompt):
     action_agent = ActionAgent()
@@ -10,13 +11,20 @@ def evaluate_prompt(prompt):
 
     while counter < 5:
         counter += 1
-        res = action_agent.prompt(user_prompt=prompt)
+        res = ast.literal_eval(action_agent.prompt(user_prompt=prompt))
         print(res)
         yield res
-        res_eval = eval_agent.prompt(prompt=res)
+        res_eval = ast.literal_eval(eval_agent.prompt(prompt=res))
         print(res_eval)
         yield res_eval
-
+        if res_eval[0]['decision'] == "decline":
+            prompt+=f"Action: {res[0]["action_type"]} was declined because: {res_eval[0]['reason']}. Please try again."
+        elif res_eval[0]['decision'] == "accept" and res[0]["action_type"]== "COMPLETED":
+            print("Task completed successfully.")
+            break
+        elif res_eval[0]['decision'] == "accept":
+            action_agent.execute(action=res[0])
+            prompt+=f"Action: {res[0]['action_type']} was accepted. Please continue."
 
 
     '''
