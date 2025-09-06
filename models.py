@@ -147,7 +147,6 @@ class ActionAgent(Agent):
                     return {"ok": True, "action": action, "target": target}
                 else:
                     return {"ok": False, "error": "File does not exist"}
-
             else:
                 return {"ok": False, "error": f"Unknown action_type: {action}"}
             
@@ -176,7 +175,7 @@ class ActionAgent(Agent):
                 "properties": {
                     "action_type": {
                         "type": "string",
-                        "enum": ["write_file", "edit_file", "create_dir", "run_shell", "open_file"],
+                        "enum": ["WRITE_FILE", "OPEN_FILE", "DELETE_FILE"],
                         "description": "Kind of action you want to perform."
                     },
                     "target": {
@@ -187,7 +186,6 @@ class ActionAgent(Agent):
                         "type": "string",
                         "description": (
                             "For file actions, provide full file contents or a unified diff."
-                            " For shell, provide the exact command."
                         )
                     },
                     "rationale": {
