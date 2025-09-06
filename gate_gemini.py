@@ -82,7 +82,7 @@ def make_propose_action_declaration() -> Dict[str, Any]:
             "properties": {
                 "action_type": {
                     "type": "string",
-                    "enum": ["write_file", "edit_file", "create_dir", "run_shell", "open_file"],
+                    "enum": ["write_file", "delete_file", "open_file"],
                     "description": "Kind of action you want to perform."
                 },
                 "target": {
@@ -211,6 +211,25 @@ def execute_action(action, repo_root):
             except UnicodeDecodeError:
                 text = data.decode("latin1", errors="replace")
             return {"ok": True, "action": at, "target": target, "content": text}
+
+        elif at =="write_file":
+            path = _safe_join(repo_root, target)
+            dir_path = os.path.dirname(path)
+            if dir_path:
+                os.makedirs(dir_path, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(payload)
+            return {"ok": True, "action": action, "target": target}
+        
+        elif at =="delete_file":
+            path = _safe_join(repo_root, target)
+            if os.path.exists(path):
+                os.remove(path)
+                return {"ok": True, "action": at, "target": target}
+            else:
+                return {"ok": False, "error": "File does not exist"}
+            
+
         else:
             return {"ok": False, "error": f"Unknown action_type: {at}"}
     except Exception as e:
