@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import os 
-from typing import Optional
 import google.genai as genai
 from google.genai import types
 from config import SYSTEM_PRIMER, MODEL, CHECK_STR
@@ -24,22 +23,40 @@ class EvalAgent(Agent):
     '''
     we always allow it to read files 
     '''
-    def __init__(self,goal,check_str):
+    def __init__(self,goal):
         self.goal = goal
         self.current_state = None
-        self.check_str = check_str # used to evaluate in the prompt
+        self.check_str = CHECK_STR # used to evaluate in the prompt
         self.client = genai.Client(api_key=os.environ["GOOGLE_GENAI_API_KEY"])
 
-    def prompt(self,prompt):
+    def prompt(self,prompt,force_action_mode=False):
+        tools = [types.Tool(function_declarations=[self.make_evaluation_response()])] 
+
+        # Function-calling mode:
+        #  - AUTO lets Gemini decide when to call tools.
+        #  - ANY forces at least one tool call (useful when you want action proposals).
+        tool_config = types.ToolConfig(
+            function_calling_config=types.FunctionCallingConfig(
+                mode="ANY" if force_action_mode else "AUTO"
+            )
+        )
+
+        config = types.GenerateContentConfig(
+            tools=tools,
+            tool_config=tool_config,
+            temperature=0.5  # more deterministic tool use
+        )
+
+
         contents = [
             types.Content(role="user", parts=[types.Part.from_text(text=CHECK_STR)]),
             types.Content(role="user", parts=[types.Part.from_text(text=self.current_state)]),
-            types.Content(role="user", parts=[types.Part.from_text(text=prompt)]),
+            types.Content(role="user", parts=[types.Part.from_text(text=self.check_str.format(goal=self.goal, repo=self.current_state, action=prompt))]),
         ]
-        response = self.client.models.generate_content(model=MODEL, contents=contents) # TODO - config?
-        return response
+        response = self.client.models.generate_content(model=MODEL, contents=contents, config=config)
+        return print_model_text(response)
     
-    def make_evaluation_response() -> Dict[str, Any]:
+    def make_evaluation_response(self):
         return {
             "name": "evaluate_action",
             "description": (
@@ -212,7 +229,7 @@ class ActionAgent(Agent):
         config = types.GenerateContentConfig(
             tools=tools,
             tool_config=tool_config,
-            temperature=0  # more deterministic tool use
+            temperature=0.5  # more deterministic tool use
         )
 
         # Start the conversation
@@ -226,49 +243,22 @@ class ActionAgent(Agent):
 
         # First turn
         response = self.client.models.generate_content(model=MODEL, contents=contents, config=config)
-        print_model_text(response)
-
-        # rounds = 0
-        # while response.function_calls and rounds < max_tool_rounds:
-        #     rounds += 1
-        #     # Handle each requested function call (usually 1 for this use case)
-        #     tool_call = response.function_calls[0]
-        #     if tool_call.name != "propose_action":
-        #         # Unknown tool: deny by default
-        #         eval_result = {
-        #             "approved": False,
-        #             "reason": f"Unknown tool '{tool_call.name}' not permitted.",
-        #             "action_echo": tool_call.args,
-        #         }
-        #     else:
-        #         # Send to our mock eval (declines everything)
-        #         # eval_result = mock_eval_always_decline(tool_call.args)
-        #         eval_result = mock_eval_always_approve(tool_call.args)
-
-        #     if eval_result.get("approved"):
-        #         exec_result = self.execute_action(tool_call.args, repo_root=repo_root)
-        #         tool_payload = {"result": {"gate": eval_result, "execution": exec_result}}
-        #     else:
-        #         tool_payload = {"result": {"gate": eval_result}}
-
-        #     # Create a function response 'part' to feed back to Gemini
-        #     function_response_part = types.Part.from_function_response(
-        #         name=tool_call.name,
-        #         response=tool_payload
-        #     )
-
-        #     # Per docs: append the model's content and then the function response as a new user turn
-        #     contents.append(response.candidates[0].content)
-        #     contents.append(types.Content(role="user", parts=[function_response_part]))
-
-        #     # Ask Gemini to continue, now that we supplied the tool result (decline)
-        #     response = self.client.models.generate_content(model=MODEL, contents=contents, config=config)
-        #     print_model_text(response)
+        res = print_model_text(response)
 
         # If still requesting tools after our cap, stop cleanly.
         if response.function_calls:
             print("\n[gatekeeper] Stopping after max_tool_rounds; further actions require human review.\n")
 
+        return res
+
 if __name__ == '__main__':
+    prompt = ''
     agent = ActionAgent()
-    agent.prompt('read the files')
+    state = agent.summarize_repo()
+    eval_agent = EvalAgent(goal=prompt)
+    eval_agent.current_state = state
+    res = agent.prompt('read the files')
+    print(res)
+
+    res_eval = eval_agent.prompt(prompt=res)
+    print(res_eval)

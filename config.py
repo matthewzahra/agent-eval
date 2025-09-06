@@ -7,14 +7,8 @@ They have access to the following actions:
 ...
 The repo layout is as follows:
 {repo}.
-
+self.goal
 The proposed action by the agent is: {action}.
-
-Respond in the following format:
-{
-    "decision":"approve" | "decline",
-    "reason":""
-}
 '''
 
 SYSTEM_PRIMER = """
