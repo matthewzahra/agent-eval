@@ -82,7 +82,7 @@ def make_propose_action_declaration() -> Dict[str, Any]:
             "properties": {
                 "action_type": {
                     "type": "string",
-                    "enum": ["write_file", "edit_file", "create_dir", "run_shell", "open_file"],
+                    "enum": ["write_file", "edit_file", "create_dir", "open_file", "delete_file"],
                     "description": "Kind of action you want to perform."
                 },
                 "target": {
@@ -211,6 +211,35 @@ def execute_action(action, repo_root):
             except UnicodeDecodeError:
                 text = data.decode("latin1", errors="replace")
             return {"ok": True, "action": at, "target": target, "content": text}
+        
+        #### ["write_file", "edit_file", "create_dir", "run_shell", "open_file", "delete_file"]
+
+        elif at == "write_file":
+            path = _safe_join(repo_root, target)
+            dirpath = os.path.dirname(path)
+            os.makedirs(dirpath, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(payload)
+            return {"ok": True, "action": at, "target": target}
+        
+        elif at == "edit_file":
+            path = _safe_join(repo_root, target)
+            if not os.path.isfile(path):
+                return {"ok": False, "error": f"File to edit does not exist: {target}"}
+            # Apply as a unified diff if it looks like one; else overwrite
+            if payload.startswith(("--- ", "+++ ", "@@ ")):
+                import difflib
+                with open(path, "r", encoding="utf-8") as f:
+                    original_lines = f.readlines()
+                diff_lines = payload.splitlines(keepends=True)
+                patched_lines = list(difflib.restore(diff_lines, 1))
+                with open(path, "w", encoding="utf-8") as f:
+                    f.writelines(patched_lines)
+            else:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(payload)
+            return {"ok": True, "action": at, "target": target}
+
         else:
             return {"ok": False, "error": f"Unknown action_type: {at}"}
     except Exception as e:
