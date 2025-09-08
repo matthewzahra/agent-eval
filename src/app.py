@@ -23,7 +23,7 @@ image = Image.open("image.png")  # replace with your file path
 image = image.resize((300, 300))  # width=300px, height=200px
 
 # Display the image
-st.image(image, caption="LLM Babysitter", use_container_width=False)
+st.image(images/image, caption="LLM Babysitter", use_container_width=False)
 
 prompt = st.text_area("Enter your prompt:")
 
