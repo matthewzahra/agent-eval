@@ -19,7 +19,7 @@ st.title("LLM Babysitter")
 from PIL import Image
 
 # Open the image file
-image = Image.open("src/image.png")  # replace with your file path
+image = Image.open("src/images/image.png")  # replace with your file path
 image = image.resize((300, 300))  # width=300px, height=200px
 
 # Display the image
