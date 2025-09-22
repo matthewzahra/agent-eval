@@ -1,26 +1,14 @@
 import streamlit as st
-import time
 from main_loop import evaluate_prompt
-
-# # Example generator functions (simulate LLM streaming)
-# def generate_response1(prompt):
-#     for i in range(5):
-#         time.sleep(0.5)
-#         yield f"Response1 part {i} for '{prompt}'"
-
-# def generate_response2(prompt):
-#     for i in range(5):
-#         time.sleep(0.7)
-#         yield f"Response2 part {i} for '{prompt}'"
-
+from config import LOOP_COUNT
 
 st.title("LLM Babysitter")
 
 from PIL import Image
 
 # Open the image file
-image = Image.open("src/images/image.png")  # replace with your file path
-image = image.resize((300, 300))  # width=300px, height=200px
+image = Image.open("src/images/image.png")
+image = image.resize((300, 300))
 
 # Display the image
 st.image(image, caption="LLM Babysitter", use_container_width=False)
@@ -40,19 +28,22 @@ if st.button("Start Streaming"):
 
     gen = evaluate_prompt(prompt)
 
-    # Loop until both generators are exhausted
-    while True:
+    # Loop until generator is exhausted - it will alternate between agents
+    for i in range(LOOP_COUNT):
         try:
             msg1 = next(gen)
             container1.write(msg1)  # append, does not overwrite
         except StopIteration:
-            gen1 = None
+            break
 
         try:
             msg2 = next(gen)
             container2.write(msg2)
         except StopIteration:
-            gen2 = None
+            break
 
         if gen is None:
             break
+
+    if i == LOOP_COUNT-1:
+        container1.write("API CALL LIMIT REACHED")
