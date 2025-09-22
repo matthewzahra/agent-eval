@@ -2,7 +2,7 @@
 
 Entry for Entrepreneurs First Hackathon.
 
-<img src="src/images/agent.png" alt="Agent Logo" width="300" height="300">
+<img src="src/images/agent_logo.png" alt="Agent Logo" width="300" height="300">
 
 # The Problem
 AI agents are being used in more and more places, and it's clear that their potential is enormous. However, there are many horror stories of these agents losing the plot and causing damage, such as deleting companies entire databases. This leaves us with 3 options.
