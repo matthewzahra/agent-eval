@@ -25,4 +25,4 @@ Rules:
 MODEL_ACTION = "gemini-2.5-flash-lite"
 MODEL_EVAL = "gemini-2.5-flash"
 
-LOOP_COUNT = 5
+LOOP_COUNT = 10

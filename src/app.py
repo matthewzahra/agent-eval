@@ -1,17 +1,22 @@
 import streamlit as st
 from main_loop import evaluate_prompt
 from config import LOOP_COUNT
-
-st.title("LLM Babysitter")
-
 from PIL import Image
 
+
+st.set_page_config(page_title="Agent Eval", page_icon="🤖", layout="centered")
+st.title("Agent Eval")
+
+
 # Open the image file
-image = Image.open("src/images/image.png")
+image = Image.open("src/images/agent_logo.png")
 image = image.resize((300, 300))
 
 # Display the image
-st.image(image, caption="LLM Babysitter", use_container_width=False)
+col1, col2, col3 = st.columns([1, 2, 1])  # middle column is wider
+with col2:
+    st.image(image, caption="LLM Babysitter", use_container_width=False)
+
 
 prompt = st.text_area("Enter your prompt:")
 
